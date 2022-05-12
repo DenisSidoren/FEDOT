@@ -1,10 +1,10 @@
 import gc
 import multiprocessing
 import timeit
+
 from abc import ABC, abstractmethod
 from contextlib import closing
 from random import choice
-
 from typing import Dict, Optional
 
 from fedot.core.dag.graph import Graph
@@ -16,6 +16,8 @@ from fedot.core.optimisers.graph import OptGraph
 from fedot.core.optimisers.objective import GraphFunction, ObjectiveFunction
 from fedot.core.optimisers.timer import Timer, get_forever_timer
 from fedot.remote.remote_evaluator import RemoteEvaluator
+
+PopulationT = TypeVar('PopulationT')
 
 
 class ObjectiveEvaluationDispatcher(ABC):
