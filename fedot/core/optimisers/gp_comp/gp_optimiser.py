@@ -109,7 +109,8 @@ class EvoGraphOptimiser(GraphOptimiser):
         # stopping_after_n_generation may be None, so use some obvious max number
         max_stagnation_length = parameters.stopping_after_n_generation or requirements.num_of_generations
         self.stop_optimisation = \
-            GroupedCondition(self.log).add_condition(
+            GroupedCondition(self.log) \
+            .add_condition(
                 lambda: self.timer.is_time_limit_reached(self.generations.generation_num),
                 'Optimisation stopped: Time limit is reached'
             ).add_condition(
@@ -141,9 +142,12 @@ class EvoGraphOptimiser(GraphOptimiser):
             init_adaptive_operators_prob(parameters.genetic_scheme_type, requirements)
 
     def _init_population(self, pop_size: int, max_depth: int) -> PopulationT:
-        builder = InitialPopulationBuilder(self.graph_generation_params, self.log)
+        adapter = self.graph_generation_params.adapter
+        validator = self.graph_generation_params.validator
+
+        builder = InitialPopulationBuilder(validator, self.log)
         if not self.initial_graphs:
-            random_graph_sampler = partial(random_graph, self.graph_generation_params, self.requirements, max_depth)
+            random_graph_sampler = partial(random_graph, validator, self.requirements, max_depth)
             builder.with_custom_sampler(random_graph_sampler)
         else:
             initial_req = deepcopy(self.requirements)
@@ -152,7 +156,7 @@ class EvoGraphOptimiser(GraphOptimiser):
             def mutate_operator(ind: Individual):
                 return self._mutate(ind, max_depth, custom_requirements=initial_req)
 
-            initial_graphs = [self.graph_generation_params.adapter.adapt(g) for g in self.initial_graphs]
+            initial_graphs = [adapter.adapt(g) for g in self.initial_graphs]
             builder.with_initial_graphs(initial_graphs).with_mutation(mutate_operator)
 
         return builder.build(pop_size)
@@ -211,7 +215,7 @@ class EvoGraphOptimiser(GraphOptimiser):
                 individuals_to_select = regularized_population(self.parameters.regularization_type,
                                                                self.population,
                                                                evaluator,
-                                                               self.graph_generation_params)
+                                                               self.graph_generation_params.validator)
 
                 selected_individuals = selection(types=self.parameters.selection_types,
                                                  population=individuals_to_select,

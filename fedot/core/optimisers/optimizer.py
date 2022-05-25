@@ -7,9 +7,10 @@ from fedot.core.dag.graph import Graph
 from fedot.core.log import Log, default_log
 from fedot.core.optimisers.adapters import BaseOptimizationAdapter, DirectAdapter
 from fedot.core.optimisers.generation_keeper import GenerationKeeper
-from fedot.core.optimisers.gp_comp.operators.operator import PopulationT, EvaluationOperator
+from fedot.core.optimisers.gp_comp.operators.operator import PopulationT
 from fedot.core.optimisers.graph import OptGraph
-from fedot.core.optimisers.objective import Objective, ObjectiveEvaluate, ObjectiveFunction, GraphFunction
+from fedot.core.optimisers.objective import Objective, ObjectiveFunction, GraphFunction
+from fedot.core.pipelines.validation import GraphValidator, ValidateRuleType
 from fedot.core.utilities.data_structures import ensure_wrapped_in_sequence
 
 OptimisationCallback = Callable[[PopulationT, GenerationKeeper], Any]
@@ -49,9 +50,16 @@ class GraphGenerationParams:
     :param rules_for_constraint: collection of constraints
     :param advisor: class of task-specific advices for graph changes
     """
-    adapter: BaseOptimizationAdapter = DirectAdapter()
-    rules_for_constraint: Sequence[Callable] = tuple()
-    advisor: Optional[DefaultChangeAdvisor] = DefaultChangeAdvisor()
+    adapter: BaseOptimizationAdapter
+    validator: GraphValidator
+    advisor: DefaultChangeAdvisor
+
+    def __init__(self, adapter: Optional[BaseOptimizationAdapter] = None,
+                 rules_for_constraint: Sequence[ValidateRuleType] = (),
+                 advisor: Optional[DefaultChangeAdvisor] = None):
+        self.adapter = adapter or DirectAdapter()
+        self.validator = GraphValidator(rules_for_constraint, self.adapter)
+        self.advisor = advisor or DefaultChangeAdvisor()
 
 
 class GraphOptimiser:
