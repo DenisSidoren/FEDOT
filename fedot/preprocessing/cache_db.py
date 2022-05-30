@@ -15,14 +15,15 @@ class PreprocessingCacheDB:
         preproc_env = 'PREPROCESSING_CACHE_PATH'
         self._db_suffix = '.preprocessing_db'
         created_preproc_path = os.getenv(preproc_env)
-        if not created_preproc_path:
+        self._preproc_table = 'preprocessors'
+        if created_preproc_path is None:
             self.db_path = db_path or Path(default_fedot_data_dir(), f'prp_{str(uuid.uuid4())}')
             self.db_path = Path(self.db_path).with_suffix(self._db_suffix)
             os.environ[preproc_env] = self.db_path.as_posix()
+            print(f'Created preproc path: {self.db_path.as_posix()}')
 
             self._del_prev_temps()
 
-            self._preproc_table = 'preprocessors'
             self._init_db()
         else:
             self.db_path = Path(created_preproc_path)
