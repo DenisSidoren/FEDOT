@@ -184,7 +184,7 @@ class EvoGraphOptimiser(GraphOptimiser):
 
         with self.timer, tqdm(total=self.requirements.num_of_generations,
                               desc='Generations', unit='gen', initial=1,
-                              disable=not show_progress or self.log.verbosity_level == -1):
+                              disable=not show_progress or self.log.verbosity_level <= 0):
             pop_size = self._pop_size.initial
             self._next_population(evaluator(self._init_population(pop_size, self._graph_depth.initial)))
 
