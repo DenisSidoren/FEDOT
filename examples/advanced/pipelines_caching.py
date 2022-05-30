@@ -99,12 +99,10 @@ def use_cache_check(n_jobs: int = 1, test_preprocessing: bool = False):
     pipelines_count, times = [{False: [], True: []} for _ in range(2)]
     plot_labels = {False: 'without cache', True: 'with cache'}
     composer_params = {'with_tuning': False}
-    if test_preprocessing:
-        composer_params.update({'cv_folds': None, 'pop_size': 10})
     base_fedot_params = {
         'problem': problem, 'seed': 42,
         'composer_params': composer_params, 'preset': 'fast_train',
-        'verbose_level': -1, 'n_jobs': n_jobs
+        'verbose_level': 0, 'n_jobs': n_jobs
     }
     timeouts = [1, 2, 3, 4, 5]
     preproc_orig_find = PreprocessingCache.try_find_preprocessor.__code__
@@ -171,7 +169,7 @@ def compare_one_process_to_many(n_jobs: int = -1, test_preprocessing: bool = Fal
     base_fedot_params = {
         'problem': problem, 'seed': 42,
         'composer_params': composer_params, 'preset': 'fast_train',
-        'verbose_level': -1
+        'verbose_level': 0
     }
     timeouts = [1, 2, 3, 4, 5]
     preproc_orig_find = PreprocessingCache.try_find_preprocessor.__code__
@@ -223,7 +221,7 @@ if __name__ == "__main__":
     examples_dct.update({
         1: (dummy_time_check,),
         2: (use_cache_check, 1, False),
-        3: (compare_one_process_to_many, -1, True)
+        3: (compare_one_process_to_many, -1, False)
     })
     benchmark_number = 2
     func, *args = examples_dct[benchmark_number]
