@@ -132,13 +132,15 @@ def use_cache_check(n_jobs: int = 1, test_preprocessing: bool = False):
                 time += (timeit.default_timer() - start_time) / 60
                 cache_effectiveness += auto_model.api_composer.cache.effectiveness_ratio if basic_cache_usage else {}
 
-            times[use_cache].append(time / mean_range)
-            pipelines_count[use_cache].append(c_pipelines // mean_range)
+            time /= mean_range
+            c_pipelines //= mean_range
+            times[use_cache].append(time)
+            pipelines_count[use_cache].append(c_pipelines)
             cache_effectiveness = {k: v / mean_range for k, v in cache_effectiveness.items()}
 
             print((
                 f'\tTimeout: {timeout}'
-                f', number of pipelines: {c_pipelines}, elapsed time: {times[use_cache][-1]:.3f}'
+                f', number of pipelines: {c_pipelines}, elapsed time: {time:.3f}'
                 f', cache effectiveness: {cache_effectiveness}'
             ))
         if test_preprocessing and not use_cache:
@@ -197,13 +199,15 @@ def compare_one_process_to_many(n_jobs: int = -1, test_preprocessing: bool = Fal
                 time += (timeit.default_timer() - start_time) / 60
                 cache_effectiveness += auto_model.api_composer.cache.effectiveness_ratio
 
-            times[_n_jobs].append(time / mean_range)
-            pipelines_count[_n_jobs].append(c_pipelines // mean_range)
+            time /= mean_range
+            c_pipelines //= mean_range
+            times[_n_jobs].append(time)
+            pipelines_count[_n_jobs].append(c_pipelines)
             cache_effectiveness = {k: v / mean_range for k, v in cache_effectiveness.items()}
 
             print((
                 f'\tTimeout: {timeout}'
-                f', number of pipelines: {c_pipelines}, elapsed time: {times[_n_jobs][-1]:.3f}'
+                f', number of pipelines: {c_pipelines}, elapsed time: {time:.3f}'
                 f', cache effectiveness: {cache_effectiveness}'
             ))
         if test_preprocessing:
