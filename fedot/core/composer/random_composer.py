@@ -82,7 +82,7 @@ class RandomSearchOptimiser(GraphOptimiser):
         self._iter_num = iter_num
         super().__init__(objective)
 
-    def optimise(self, objective: ObjectiveFunction, show_progress: bool = True) -> Sequence[Pipeline]:
+    def optimise(self, objective: ObjectiveFunction) -> Sequence[Pipeline]:
         best_metric_value = 1000
         best_set = None
         history = []

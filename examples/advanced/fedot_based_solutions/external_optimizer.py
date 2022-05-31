@@ -32,7 +32,7 @@ class RandomMutationSearchOptimizer(GraphOptimiser):
                              MutationTypesEnum.single_drop,
                              MutationTypesEnum.single_add]
 
-    def optimise(self, objective: ObjectiveFunction, show_progress: bool = True):
+    def optimise(self, objective: ObjectiveFunction):
 
         timer = OptimisationTimer(log=self.log, timeout=self.requirements.timeout)
         dispatcher = MultiprocessingDispatcher(self.graph_generation_params.adapter, timer, log=self.log, n_jobs=1)
