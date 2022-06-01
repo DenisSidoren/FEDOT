@@ -3,6 +3,7 @@ from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import LabelEncoder
 
 from fedot.core.data.data import InputData, OutputData, data_type_is_table, data_type_is_ts
 from fedot.core.data.data_preprocessing import (
@@ -27,7 +28,6 @@ from fedot.preprocessing.data_types import NAME_CLASS_INT, TableTypesCorrector
 # The allowed percent of empty samples in features.
 # Example: 90% objects in features are 'nan', then drop this feature from data.
 from fedot.preprocessing.structure import DEFAULT_SOURCE_NAME, PipelineStructureExplorer
-from sklearn.preprocessing import LabelEncoder
 
 ALLOWED_NAN_PERCENT = 0.9
 
@@ -140,12 +140,12 @@ class DataPreprocessor:
         self._init_supplementary_preprocessors(data)
 
         if isinstance(data, InputData):
-            self._prepare_optional_for_fit(pipeline, data, DEFAULT_SOURCE_NAME)
+            self._prepare_optional(pipeline, data, DEFAULT_SOURCE_NAME)
         else:
             # Multimodal data
             self._init_main_target_source_name(data)
             for data_source_name, values in data.items():
-                self._prepare_optional_for_fit(pipeline, values, data_source_name)
+                self._prepare_optional(pipeline, values, data_source_name)
 
         return data
 
@@ -157,11 +157,11 @@ class DataPreprocessor:
         :param data: data to preprocess
         """
         if isinstance(data, InputData):
-            self._prepare_optional_for_predict(pipeline, data, DEFAULT_SOURCE_NAME)
+            self._prepare_optional(pipeline, data, DEFAULT_SOURCE_NAME)
         else:
             # Multimodal data
             for data_source_name, values in data.items():
-                self._prepare_optional_for_predict(pipeline, values, data_source_name)
+                self._prepare_optional(pipeline, values, data_source_name)
 
         return data
 
@@ -229,28 +229,13 @@ class DataPreprocessor:
             # self._apply_categorical_encoding(data, source_name)
         return data
 
-    def _prepare_optional_for_fit(self, pipeline, data: InputData, source_name: str):
-        """ Perform optional preprocessing for unimodal data """
+    def _prepare_optional(self, pipeline, data: InputData, source_name: str):
+        """ Perform optional fitting/preprocessing for unimodal data """
         if not data_type_is_table(data):
             return data
 
         if data_has_missing_values(data):
             # Data contains missing values
-            has_imputer = self.structure_analysis.check_structure_by_tag(pipeline, tag_to_check='imputation',
-                                                                         source_name=source_name)
-            if not has_imputer:
-                self._apply_imputation_unidata(data, source_name)
-
-        if data_has_categorical_features(data):
-            # Data contains categorical features values
-            has_encoder = self.structure_analysis.check_structure_by_tag(pipeline, tag_to_check='encoding',
-                                                                         source_name=source_name)
-            if not has_encoder:
-                self._apply_categorical_encoding(data, source_name)
-
-    def _prepare_optional_for_predict(self, pipeline, data: InputData, source_name: str):
-        """ Perform optional preprocessing for predict stage """
-        if data_has_missing_values(data):
             has_imputer = self.structure_analysis.check_structure_by_tag(pipeline, tag_to_check='imputation',
                                                                          source_name=source_name)
             if not has_imputer:
@@ -261,7 +246,7 @@ class DataPreprocessor:
             has_encoder = self.structure_analysis.check_structure_by_tag(pipeline, tag_to_check='encoding',
                                                                          source_name=source_name)
             if not has_encoder:
-                self._apply_categorical_encoding(data, source_name)
+                data = self._apply_categorical_encoding(data, source_name)
 
     def _find_features_full_of_nans(self, data: InputData, source_name: str):
         """ Find features with more than ALLOWED_NAN_PERCENT nan's
@@ -347,31 +332,6 @@ class DataPreprocessor:
 
         :param data: data for fill in the gaps
         """
-        # imputer = ImputationImplementation()
-        # fit_from_scratch = False
-        # num_fitted, cat_fitted = True, True
-        # try:
-        #     check_is_fitted(self.imputer.imputer_cat)
-        # except NotFittedError as exc:
-        #     cat_fitted = False
-        # try:
-        #     check_is_fitted(self.imputer.imputer_num)
-        # except NotFittedError as exc:
-        #     num_fitted = False
-        # if num_fitted or cat_fitted:
-        #     output_data = self.imputer.transform(data)
-        #     data.features = output_data.predict
-        # else:
-        #     fit_from_scratch = True
-        # if fit_from_scratch and self._is_imputer_trained:
-        #     self.log.info("FALSY IMPUTER TRAINED")
-        # if fit_from_scratch and not self._is_imputer_trained:
-        #     output_data = self.imputer.fit_transform(data)
-        #     self._is_imputer_trained = True
-        #     data.features = output_data.predict
-        # return data
-
-        # v2
         imputer = self.features_imputers.get(source_name)
         if imputer is None:
             imputer = ImputationImplementation()
@@ -390,9 +350,6 @@ class DataPreprocessor:
         :param data: data to transformation
         :param source_name: name of data source node
         """
-        if not data_has_categorical_features(data):
-            # No encoding needed for current data
-            return data
         encoder = self.features_encoders.get(source_name)
         if encoder is None:
             encoder = OneHotEncodingImplementation()
@@ -402,6 +359,7 @@ class DataPreprocessor:
         output_data.predict = output_data.predict.astype(float)
         data.features = output_data.predict
         data.supplementary_data = output_data.supplementary_data
+        return data
 
     def _train_target_encoder(self, data: InputData, source_name: str):
         """ Convert string categorical target into integer column using LabelEncoder """
