@@ -1,7 +1,7 @@
-from typing import Union, Optional
+from typing import Optional, Union
 
 from fedot.core.data.data import InputData
-from fedot.core.data.data_preprocessing import data_has_missing_values, data_has_categorical_features
+from fedot.core.data.data_preprocessing import data_has_categorical_features, data_has_missing_values
 from fedot.core.data.multi_modal import MultiModalData
 from fedot.core.pipelines.node import Node
 from fedot.core.pipelines.pipeline import Pipeline
@@ -21,10 +21,11 @@ class PreprocessingBuilder:
                          data: Union[InputData, MultiModalData],
                          *initial_nodes: Optional[Node]) -> PipelineBuilder:
         preprocessing_builder = cls(task_type, *initial_nodes)
-        if data_has_missing_values(data):
-            preprocessing_builder = preprocessing_builder.with_gaps()
-        if data_has_categorical_features(data):
-            preprocessing_builder = preprocessing_builder.with_categorical()
+        ## TODO: does it required to be disabled if i use preprocessors caching?
+        # if data_has_missing_values(data):
+        #     preprocessing_builder = preprocessing_builder.with_gaps()
+        # if data_has_categorical_features(data):
+        #     preprocessing_builder = preprocessing_builder.with_categorical()
         return preprocessing_builder.to_builder()
 
     def with_gaps(self):
