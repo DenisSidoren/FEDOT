@@ -21,11 +21,10 @@ class PreprocessingBuilder:
                          data: Union[InputData, MultiModalData],
                          *initial_nodes: Optional[Node]) -> PipelineBuilder:
         preprocessing_builder = cls(task_type, *initial_nodes)
-        ## TODO: does it required to be disabled if i use preprocessors caching?
-        # if data_has_missing_values(data):
-        #     preprocessing_builder = preprocessing_builder.with_gaps()
-        # if data_has_categorical_features(data):
-        #     preprocessing_builder = preprocessing_builder.with_categorical()
+        if data_has_missing_values(data):
+            preprocessing_builder = preprocessing_builder.with_gaps()
+        if data_has_categorical_features(data):
+            preprocessing_builder = preprocessing_builder.with_categorical()
         return preprocessing_builder.to_builder()
 
     def with_gaps(self):
