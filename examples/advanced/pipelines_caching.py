@@ -100,9 +100,6 @@ def use_cache_check(n_jobs: int = 1, test_preprocessing: bool = False):
     plot_labels = {False: 'without cache', True: 'with cache'}
     composer_params = {'with_tuning': False}
     preset = 'fast_train'
-    if test_preprocessing:
-        preset = 'best_quality'
-        composer_params.update({'pop_size': 6, 'num_of_generations': 5})
     base_fedot_params = {
         'problem': problem, 'seed': 42,
         'composer_params': composer_params, 'preset': preset,
@@ -120,7 +117,7 @@ def use_cache_check(n_jobs: int = 1, test_preprocessing: bool = False):
         for timeout in timeouts:
             c_pipelines = 0.
             time = 0.
-            mean_range = 3
+            mean_range = 1
             cache_effectiveness = collections.Counter()
             for i in range(mean_range):
                 train_data_tmp = train_data.copy()
@@ -187,7 +184,7 @@ def compare_one_process_to_many(n_jobs: int = -1, test_preprocessing: bool = Fal
         for timeout in timeouts:
             c_pipelines = 0.
             time = 0.
-            mean_range = 3
+            mean_range = 1
             cache_effectiveness = collections.Counter()
             for i in range(mean_range):
                 train_data_tmp = train_data.copy()
@@ -224,8 +221,8 @@ if __name__ == "__main__":
     examples_dct = defaultdict(lambda: (lambda: print('Wrong example number option'),))
     examples_dct.update({
         1: (dummy_time_check,),
-        2: (use_cache_check, 1, False),
-        3: (compare_one_process_to_many, -1, False)
+        2: (use_cache_check, 1, True),
+        3: (compare_one_process_to_many, -1, True)
     })
     benchmark_number = 2
     func, *args = examples_dct[benchmark_number]
