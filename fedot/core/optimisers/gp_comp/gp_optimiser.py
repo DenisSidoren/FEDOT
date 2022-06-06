@@ -2,6 +2,8 @@ from copy import deepcopy
 from functools import partial
 from typing import Any, Iterable, List, Optional, Sequence, Union
 
+from tqdm import tqdm
+
 from fedot.core.composer.gp_composer.gp_composer import PipelineComposerRequirements
 from fedot.core.log import Log
 from fedot.core.optimisers.generation_keeper import GenerationKeeper
@@ -22,7 +24,8 @@ from fedot.core.optimisers.graph import OptGraph
 from fedot.core.optimisers.objective import GraphFunction, Objective, ObjectiveFunction
 from fedot.core.optimisers.optimizer import GraphGenerationParams, GraphOptimiser, GraphOptimiserParameters
 from fedot.core.optimisers.timer import OptimisationTimer
-from tqdm import tqdm
+from fedot.core.pipelines.pipeline import Pipeline
+from fedot.core.utilities.grouped_condition import GroupedCondition
 
 
 class GPGraphOptimiserParameters(GraphOptimiserParameters):
