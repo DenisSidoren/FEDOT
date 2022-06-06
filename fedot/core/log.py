@@ -53,6 +53,9 @@ class LogManager(metaclass=SingletonMeta):
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         console_handler = logging.StreamHandler(sys.stdout)
 
+        console_formatter = logging.Formatter('%(asctime)s - %(message)s')
+        console_handler.setFormatter(console_formatter)
+
         try:
             file_handler = RotatingFileHandler(log_file)
             file_handler.setLevel(logging.DEBUG)
