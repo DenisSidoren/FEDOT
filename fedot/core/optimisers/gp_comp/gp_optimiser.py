@@ -2,8 +2,6 @@ from copy import deepcopy
 from functools import partial
 from typing import Any, Iterable, List, Optional, Sequence, Union
 
-from tqdm import tqdm
-
 from fedot.core.composer.gp_composer.gp_composer import PipelineComposerRequirements
 from fedot.core.log import Log
 from fedot.core.optimisers.generation_keeper import GenerationKeeper
@@ -26,6 +24,7 @@ from fedot.core.optimisers.optimizer import GraphGenerationParams, GraphOptimise
 from fedot.core.optimisers.timer import OptimisationTimer
 from fedot.core.pipelines.pipeline import Pipeline
 from fedot.core.utilities.grouped_condition import GroupedCondition
+from tqdm import tqdm
 
 
 class GPGraphOptimiserParameters(GraphOptimiserParameters):
@@ -110,7 +109,7 @@ class EvoGraphOptimiser(GraphOptimiser):
         max_stagnation_length = parameters.stopping_after_n_generation or requirements.num_of_generations
         self.stop_optimisation = \
             GroupedCondition(self.log) \
-                .add_condition(
+            .add_condition(
                 lambda: self.timer.is_time_limit_reached(self.generations.generation_num),
                 'Optimisation stopped: Time limit is reached'
             ).add_condition(
