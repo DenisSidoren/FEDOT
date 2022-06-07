@@ -17,7 +17,7 @@ from fedot.core.optimisers.gp_comp.initial_population_builder import InitialPopu
 from fedot.core.optimisers.gp_comp.operators.crossover import CrossoverTypesEnum, crossover
 from fedot.core.optimisers.gp_comp.operators.inheritance import GeneticSchemeTypesEnum, inheritance
 from fedot.core.optimisers.gp_comp.operators.mutation import MutationTypesEnum, mutation
-from fedot.core.optimisers.gp_comp.operators.operator import PopulationT
+from fedot.core.optimisers.gp_comp.operators.operator import PopulationT, EvaluationOperator
 from fedot.core.optimisers.gp_comp.operators.regularization import RegularizationTypesEnum, regularized_population
 from fedot.core.optimisers.gp_comp.operators.selection import SelectionTypesEnum, crossover_parents_selection, selection
 from fedot.core.optimisers.gp_comp.parameters.graph_depth import AdaptiveGraphDepth
@@ -161,7 +161,7 @@ class EvoGraphOptimiser(GraphOptimiser):
 
         return builder.build(pop_size)
 
-    def _next_population(self, next_population: PopulationT):
+    def _update_generation(self, next_population: PopulationT):
         self.assign_positional_ids(next_population)
         self.generations.append(next_population)
         self._optimisation_callback(next_population, self.generations)
@@ -202,36 +202,39 @@ class EvoGraphOptimiser(GraphOptimiser):
             if self.initial_graphs:
                 initial_individuals = [Individual(self.graph_generation_params.adapter.adapt(g)) for g in
                                        self.initial_graphs]
-                self._next_population(evaluator(initial_individuals))
+                self._update_generation(evaluator(initial_individuals))
 
             pop_size = self._pop_size.initial
-            self._next_population(evaluator(self._init_population(pop_size, self._graph_depth.initial)))
+            self._update_generation(evaluator(self._init_population(pop_size, self._graph_depth.initial)))
 
             while not self.stop_optimisation():
-                pop_size = self._pop_size.next(self.population)
-                self.max_depth = self._graph_depth.next()
-                self.log.info(f'Next population size: {pop_size}; max graph depth: {self.max_depth}')
-
-                individuals_to_select = regularized_population(self.parameters.regularization_type,
-                                                               self.population,
-                                                               evaluator,
-                                                               self.graph_generation_params.validator)
-
-                selected_individuals = selection(types=self.parameters.selection_types,
-                                                 population=individuals_to_select,
-                                                 pop_size=pop_size,
-                                                 params=self.graph_generation_params)
-                new_population = self._reproduce(selected_individuals)
-
-                new_population = list(map(self._mutate, new_population))
-                new_population = evaluator(new_population)
-
-                new_population = self._inheritance(new_population, pop_size)
-
-                self._next_population(new_population)
+                self._update_generation(self._next_population(evaluator))
 
         all_best_graphs = [ind.graph for ind in self.generations.best_individuals]
         return all_best_graphs
+
+    def _next_population(self, evaluator: EvaluationOperator) -> PopulationT:
+        pop_size = self._pop_size.next(self.population)
+        self.max_depth = self._graph_depth.next()
+        self.log.info(f'Next population size: {pop_size}; max graph depth: {self.max_depth}')
+
+        individuals_to_select = regularized_population(self.parameters.regularization_type,
+                                                       self.population,
+                                                       evaluator,
+                                                       self.graph_generation_params.validator)
+
+        selected_individuals = selection(types=self.parameters.selection_types,
+                                         population=individuals_to_select,
+                                         pop_size=pop_size,
+                                         params=self.graph_generation_params)
+        new_population = self._reproduce(selected_individuals)
+
+        new_population = list(map(self._mutate, new_population))
+        new_population = evaluator(new_population)
+
+        new_population = self._inheritance(new_population, pop_size)
+
+        return new_population
 
     def with_elitism(self, pop_size: int) -> bool:
         if self.objective.is_multi_objective:
