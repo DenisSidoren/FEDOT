@@ -118,7 +118,6 @@ class Fedot:
         preprocessing_cache = PreprocessingCache(self.params.log)
         preprocessing_cache.reset()
 
-
         # Get metrics for optimization
         metric_name = self.params.api_params['metric_name']
         self.task_metrics, self.composer_metrics, self.tuner_metrics = self.metrics.get_metrics_for_task(metric_name)

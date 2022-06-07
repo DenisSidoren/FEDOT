@@ -10,6 +10,13 @@ if TYPE_CHECKING:
 
 
 class PreprocessingCache(metaclass=SingletonMeta):
+    """
+    Stores/loads preprocessors for pipelines to decrease time for fitting preprocessor.
+
+    :param log: optional Log object to record messages
+    :param db_path: optional str db file name
+    """
+
     def __init__(self, log: Optional[Log] = None, db_path: Optional[str] = None):
         self.log = log or default_log(__name__)
         self._db = PreprocessingCacheDB(db_path)
