@@ -465,7 +465,7 @@
         "non_linear"
       ]
     },
-    "word2vec": {
+    "word2vec_pretrained": {
       "meta": "text_classification_gensim",
       "tags": [
         "non-default", "text"
