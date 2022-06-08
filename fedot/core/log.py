@@ -30,6 +30,37 @@ class SingletonMeta(type):
 
     def clear(cls):
         cls._instances = {}
+        
+
+class Log(metaclass=SingletonMeta):
+    def __init__(self):
+        self.__default_logger = LogProfile(prefix='default',
+                                           config_json_file='default',
+                                           log_file=os.path.join(default_fedot_data_dir(), 'log.log'))
+        self.__loggers = []
+
+    def get_logger(self, prefix: str, config_file: str = 'default', log_file: str = None):
+        if prefix == 'default':
+            return self.__default_logger
+        cur_logger = LogProfile(prefix=prefix,
+                                config_json_file=config_file,
+                                log_file=log_file)
+        if cur_logger not in self.__loggers:
+            self.__loggers.append(cur_logger)
+        return cur_logger
+
+    @property
+    def debug(self):
+        """Returns the information about available loggers"""
+        debug_info = {
+            'loggers_number': len(self.__loggers),
+            'loggers_names': [logger.prefix for logger in self.__loggers],
+            'loggers': [logger.logger for logger in self.__loggers]
+        }
+        return debug_info
+
+    def clear_cache(self):
+        self.__loggers.clear()
 
 
 class LogProfile:
@@ -51,8 +82,6 @@ class LogProfile:
             self.log_file = os.path.join(default_fedot_data_dir(), 'log.log')
         else:
             self.log_file = log_file
-
-        self.profiles = []
 
         self.prefix = prefix
         self.config_file = config_json_file
@@ -173,45 +202,8 @@ class LogProfile:
     def __repr__(self):
         return self.__str__()
 
-
-class Log(metaclass=SingletonMeta):
-    __logger_dict = {}
-    __default_logger = LogProfile(prefix='default',
-                                  config_json_file='default',
-                                  log_file=os.path.join(default_fedot_data_dir(), 'log.log'))
-    # stores the flag of error notification for each log file (e.g. permission error).
-    __errors_for_log_files = {}
-
-    def __init__(self):
-        pass
-
-    def get_logger(self, prefix: str = None, config_file: str = 'default', log_file: str = None) -> 'LogProfile':
-        if not prefix:
-            return self.__default_logger
-        if prefix not in self.__logger_dict.keys():
-            if not log_file:
-                log_file = os.path.join(default_fedot_data_dir(), 'log.log')
-            self.__logger_dict[prefix] = LogProfile(prefix=prefix,
-                                                    config_json_file=config_file,
-                                                    log_file=log_file)
-        return self.__logger_dict[prefix]
-
-    @property
-    def debug(self):
-        """Returns the information about available loggers"""
-        debug_info = {
-            'loggers_number': len(self.__logger_dict),
-            'loggers_names': [self.__logger_dict.keys()],
-            'loggers': [self.__logger_dict.values()]
-        }
-        return debug_info
-
-    def clear_cache(self):
-        self.__logger_dict.clear()
-
-
-# default logger: logs to default directory with default name
-default_log = Log().get_logger()
+    def __eq__(self, other):
+        return list(self.__dict__.values()) == list(other.__dict__.values())
 
 
 # ---------------------------------------------------------------------------
@@ -220,8 +212,12 @@ default_log = Log().get_logger()
 # ---------------------------------------------------------------------------
 
 
-def get_logger(prefix: str = None, config_file: str = 'default', log_file: str = None):
+def get_logger(prefix: str = 'default', config_file: str = 'default', log_file: str = None) -> LogProfile:
     return Log().get_logger(prefix, config_file, log_file)
+
+
+# default logger: logs to default directory with default name
+default_log = get_logger()
 
 
 def message(message):
