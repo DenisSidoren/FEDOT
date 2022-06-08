@@ -2,11 +2,9 @@ import json
 import logging
 import os
 import sys
-from functools import wraps
 from logging.config import dictConfig
 from logging.handlers import RotatingFileHandler
 from threading import RLock
-from typing import Optional
 
 from fedot.core.utils import default_fedot_data_dir
 
@@ -30,111 +28,38 @@ class SingletonMeta(type):
                 cls._instances[cls] = instance
         return cls._instances[cls]
 
-
-class LogManager(metaclass=SingletonMeta):
-    __logger_dict = {}
-    # stores the flag of error notification for each log file (e.g. permission error).
-    __errors_for_log_files = {}
-
-    def __init__(self):
-        pass
-
-    def get_logger(self, name, config_file: str, log_file: str = None):
-        if name not in self.__logger_dict.keys():
-            self.__logger_dict[name] = logging.getLogger(name)
-            if config_file != 'default':
-                self._setup_logger_from_json_file(config_file)
-            else:
-                self._setup_default_logger(log_file, name)
-
-        return self.__logger_dict[name]
-
-    def _setup_default_logger(self, log_file, logger_name):
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        console_handler = logging.StreamHandler(sys.stdout)
-
-        console_formatter = logging.Formatter('%(asctime)s - %(message)s')
-        console_handler.setFormatter(console_formatter)
-
-        try:
-            file_handler = RotatingFileHandler(log_file)
-            file_handler.setLevel(logging.DEBUG)
-            file_handler.setFormatter(formatter)
-            self.__logger_dict[logger_name].addHandler(file_handler)
-        except PermissionError as ex:
-            # if log_file is unavailable
-            if not self.__errors_for_log_files.get(log_file, False):
-                self.__errors_for_log_files[log_file] = True
-                print(f'Logger problem: Can not log to {log_file} because of {ex}')
-        else:
-            self.__errors_for_log_files[log_file] = False
-        self.__logger_dict[logger_name].setLevel(logging.DEBUG)
-        self.__logger_dict[logger_name].addHandler(console_handler)
-
-    def _setup_logger_from_json_file(self, config_file):
-        """Setup logging configuration from file"""
-        try:
-            with open(config_file, 'rt') as file:
-                config = json.load(file)
-            dictConfig(config)
-        except Exception as ex:
-            raise Exception(f'Can not open the log config file because of {ex}')
-
-    @property
-    def debug(self):
-        """Returns the information about available loggers"""
-        debug_info = {
-            'loggers_number': len(self.__logger_dict),
-            'loggers_names': [self.__logger_dict.keys()],
-            'loggers': [self.__logger_dict.values()]
-        }
-        return debug_info
-
-    def clear_cache(self):
-        self.__logger_dict.clear()
+    def clear(cls):
+        cls._instances = {}
 
 
-def default_log(logger_name: str,
-                log_file: Optional[str] = None,
-                verbose_level: int = 2) -> 'Log':
-    """
-    :param logger_name: string name for logger
-    :param log_file: path to the file where log messages will be recorded to
-    :param verbose_level level of detalization
-    :return Log: Log object
-    """
-    if not log_file:
-        log_file = os.path.join(default_fedot_data_dir(), 'log.log')
-    log = Log(logger_name=logger_name,
-              config_json_file='default',
-              log_file=log_file,
-              output_verbosity_level=verbose_level)
-    return log
-
-
-class Log:
+class LogProfile:
     """
     This class provides with basic logging object
 
-    :param str logger_name: name of the logger object
-    :param str config_json_file: json file with configuration for logger setup
-    :param str log_file: file where log messages are recorded to
+    :param str prefix: name of the logger object
+    :param str config_json_file: path to json file with configuration for logger setup
+    :param str log_file: path to file where log messages are recorded to
     """
 
-    def __init__(self, logger_name: str,
-                 config_json_file: str,
+    def __init__(self, prefix: str = 'default',
+                 config_json_file: str = 'default',
                  output_verbosity_level=1,
                  log_file: str = None):
+        self.__errors_for_log_file = {}
+
         if not log_file:
             self.log_file = os.path.join(default_fedot_data_dir(), 'log.log')
         else:
             self.log_file = log_file
 
-        self.name = logger_name
+        self.profiles = []
+
+        self.prefix = prefix
         self.config_file = config_json_file
-        self.logger = LogManager().get_logger(logger_name,
-                                              config_file=self.config_file,
-                                              log_file=self.log_file)
+        self.logger = logging.getLogger(prefix)
+        self._setup_logger(config_file=self.config_file,
+                           log_file_path=self.log_file)
+
         self.verbosity_level = output_verbosity_level
 
     def message(self, message):
@@ -182,6 +107,46 @@ class Log:
         for handler in self.handlers:
             handler.close()
 
+    def _setup_logger(self, config_file: str, log_file_path: str):
+        """ Setup logger with config file if specified """
+        if config_file != 'default':
+            self._setup_logger_from_json_file(config_file)
+        else:
+            self._setup_default_logger(log_file_path)
+
+    def _setup_default_logger(self, log_file_path: str):
+        """ Setup default logger """
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        console_handler = logging.StreamHandler(sys.stdout)
+
+        console_formatter = logging.Formatter('%(asctime)s - %(message)s')
+        console_handler.setFormatter(console_formatter)
+
+        try:
+            file_handler = RotatingFileHandler(log_file_path)
+            file_handler.setLevel(logging.DEBUG)
+            file_handler.setFormatter(formatter)
+            self.logger.addHandler(file_handler)
+        except PermissionError as ex:
+            # if log_file is unavailable
+            if not self.__errors_for_log_file.get(log_file_path, False):
+                self.__errors_for_log_file[log_file_path] = True
+                print(f'Logger problem: Can not log to {log_file_path} because of {ex}')
+        else:
+            self.__errors_for_log_file[log_file_path] = False
+        self.logger.setLevel(logging.DEBUG)
+        self.logger.addHandler(console_handler)
+
+    @staticmethod
+    def _setup_logger_from_json_file(config_file):
+        """Setup logging configuration from file"""
+        try:
+            with open(config_file, 'rt') as file:
+                config = json.load(file)
+            dictConfig(config)
+        except Exception as ex:
+            raise Exception(f'Can not open the log config file because of {ex}')
+
     def __getstate__(self):
         """
         Define the attributes to be pickled via deepcopy or pickle
@@ -200,24 +165,102 @@ class Log:
         :param state: pickled class attributes
         """
         self.__dict__.update(state)
-        self.logger = logging.getLogger(self.name)
+        self.logger = logging.getLogger(self.prefix)
 
     def __str__(self):
-        return f'Log object for {self.name} module'
+        return f'Log object for {self.prefix} module'
 
     def __repr__(self):
         return self.__str__()
 
 
-def start_end_log_decorator(start_msg='Starting...', end_msg='Finished'):
-    def decorator(method):
-        @wraps(method)
-        def wrapper(*args, **kwargs):
-            args[0].log.info(f'{start_msg}')
-            value = method(*args, **kwargs)
-            args[0].log.info(f'{end_msg}')
-            return value
+class Log(metaclass=SingletonMeta):
+    __logger_dict = {}
+    __default_logger = LogProfile(prefix='default',
+                                  config_json_file='default',
+                                  log_file=os.path.join(default_fedot_data_dir(), 'log.log'))
+    # stores the flag of error notification for each log file (e.g. permission error).
+    __errors_for_log_files = {}
 
-        return wrapper
+    def __init__(self):
+        pass
 
-    return decorator
+    def get_logger(self, prefix: str = None, config_file: str = 'default', log_file: str = None) -> 'LogProfile':
+        if not prefix:
+            return self.__default_logger
+        if prefix not in self.__logger_dict.keys():
+            if not log_file:
+                log_file = os.path.join(default_fedot_data_dir(), 'log.log')
+            self.__logger_dict[prefix] = LogProfile(prefix=prefix,
+                                                    config_json_file=config_file,
+                                                    log_file=log_file)
+        return self.__logger_dict[prefix]
+
+    @property
+    def debug(self):
+        """Returns the information about available loggers"""
+        debug_info = {
+            'loggers_number': len(self.__logger_dict),
+            'loggers_names': [self.__logger_dict.keys()],
+            'loggers': [self.__logger_dict.values()]
+        }
+        return debug_info
+
+    def clear_cache(self):
+        self.__logger_dict.clear()
+
+
+# default logger: logs to default directory with default name
+default_log = Log().get_logger()
+
+
+# ---------------------------------------------------------------------------
+# Utility functions at module level.
+# Basically delegate everything to the default logger.
+# ---------------------------------------------------------------------------
+
+
+def get_logger(prefix: str = None, config_file: str = 'default', log_file: str = None):
+    return Log().get_logger(prefix, config_file, log_file)
+
+
+def message(message):
+    """Record the message to user"""
+    for_verbosity = 1
+    if default_log.verbosity_level >= for_verbosity:
+        default_log.logger.info(message)
+
+
+def info(message):
+    """Record the INFO log message"""
+    for_verbosity = 2
+    if default_log.verbosity_level >= for_verbosity:
+        default_log.logger.info(message)
+
+
+def debug(message):
+    """Record the DEBUG log message"""
+    for_verbosity = 3
+    if default_log.verbosity_level >= for_verbosity:
+        default_log.logger.info(message)
+
+
+def ext_debug(message):
+    """Record the extended DEBUG log message"""
+    for_verbosity = 4
+    if default_log.verbosity_level >= for_verbosity:
+        default_log.logger.info(message)
+
+
+def warn(message):
+    """Record the WARN log message"""
+    for_verbosity = 2
+    if default_log.verbosity_level >= for_verbosity:
+        default_log.logger.info(message)
+
+
+def error(message):
+    """Record the ERROR log message"""
+    for_verbosity = 0
+    if default_log.verbosity_level >= for_verbosity:
+        default_log.logger.error(message, exc_info=True)
