@@ -1,11 +1,13 @@
 from copy import deepcopy
 from functools import partial
-from typing import Any, Optional, Union, List, Iterable, Sequence
+from typing import Any, Iterable, List, Optional, Sequence, Union
 
 from tqdm import tqdm
 
 from fedot.core.composer.gp_composer.gp_composer import PipelineComposerRequirements
 from fedot.core.log import Log
+from fedot.core.optimisers.generation_keeper import GenerationKeeper
+from fedot.core.optimisers.gp_comp.evaluation import MultiprocessingDispatcher
 from fedot.core.optimisers.gp_comp.gp_operators import (
     clean_operators_history,
     random_graph
@@ -13,22 +15,21 @@ from fedot.core.optimisers.gp_comp.gp_operators import (
 from fedot.core.optimisers.gp_comp.individual import Individual
 from fedot.core.optimisers.gp_comp.initial_population_builder import InitialPopulationBuilder
 from fedot.core.optimisers.gp_comp.operators.crossover import CrossoverTypesEnum, crossover
-from fedot.core.optimisers.gp_comp.evaluation import MultiprocessingDispatcher
 from fedot.core.optimisers.gp_comp.operators.inheritance import GeneticSchemeTypesEnum, inheritance
-from fedot.core.optimisers.generation_keeper import GenerationKeeper
 from fedot.core.optimisers.gp_comp.operators.mutation import MutationTypesEnum, mutation
 from fedot.core.optimisers.gp_comp.operators.operator import PopulationT
+from fedot.core.optimisers.gp_comp.operators.regularization import RegularizationTypesEnum, regularized_population
+from fedot.core.optimisers.gp_comp.operators.selection import SelectionTypesEnum, crossover_parents_selection, selection
 from fedot.core.optimisers.gp_comp.parameters.graph_depth import AdaptiveGraphDepth
 from fedot.core.optimisers.gp_comp.parameters.operators_prob import init_adaptive_operators_prob
 from fedot.core.optimisers.gp_comp.parameters.population_size import PopulationSize, init_adaptive_pop_size
-from fedot.core.optimisers.gp_comp.operators.regularization import RegularizationTypesEnum, regularized_population
-from fedot.core.optimisers.gp_comp.operators.selection import SelectionTypesEnum, selection, crossover_parents_selection
-from fedot.core.pipelines.pipeline import Pipeline
-from fedot.core.utilities.grouped_condition import GroupedCondition
 from fedot.core.optimisers.graph import OptGraph
+from fedot.core.optimisers.objective import GraphFunction, ObjectiveFunction
+from fedot.core.optimisers.objective.objective import Objective
 from fedot.core.optimisers.optimizer import GraphGenerationParams, GraphOptimiser, GraphOptimiserParameters
 from fedot.core.optimisers.timer import OptimisationTimer
-from fedot.core.optimisers.objective import Objective, ObjectiveFunction, GraphFunction
+from fedot.core.pipelines.pipeline import Pipeline
+from fedot.core.utilities.grouped_condition import GroupedCondition
 
 
 class GPGraphOptimiserParameters(GraphOptimiserParameters):
@@ -115,7 +116,7 @@ class EvoGraphOptimiser(GraphOptimiser):
                 lambda: self.timer.is_time_limit_reached(self.generations.generation_num),
                 'Optimisation stopped: Time limit is reached'
             ).add_condition(
-                lambda: self.generations.generation_num >= requirements.num_of_generations,
+                lambda: self.generations.generation_num >= requirements.num_of_generations + 1,
                 'Optimisation stopped: Max number of generations reached'
             ).add_condition(
                 lambda: self.generations.stagnation_duration >= max_stagnation_length,
@@ -154,12 +155,13 @@ class EvoGraphOptimiser(GraphOptimiser):
             def mutate_operator(ind: Individual):
                 return self._mutate(ind, max_depth, custom_requirements=initial_req)
 
-            initial_graphs = [self.graph_generation_params.adapter.adapt(g) for g in self.initial_graph]
+            initial_graphs = [self.graph_generation_params.adapter.adapt(g) for g in self.initial_graphs]
             builder.with_initial_graphs(initial_graphs).with_mutation(mutate_operator)
 
         return builder.build(pop_size)
 
     def _next_population(self, next_population: PopulationT):
+        self.assign_positional_ids(next_population)
         self.generations.append(next_population)
         self._optimisation_callback(next_population, self.generations)
         clean_operators_history(next_population)
@@ -180,6 +182,11 @@ class EvoGraphOptimiser(GraphOptimiser):
         # Redirect callback to evaluation dispatcher
         self.eval_dispatcher.set_evaluation_callback(callback)
 
+    def assign_positional_ids(self, pop: PopulationT):
+        for ind_id, ind in enumerate(pop):
+            ind.pop_num = self.generations.generation_num
+            ind.ind_num = ind_id
+
     def optimise(self, objective: ObjectiveFunction,
                  show_progress: bool = True) -> Union[OptGraph, List[OptGraph]]:
 
@@ -189,6 +196,12 @@ class EvoGraphOptimiser(GraphOptimiser):
         with self.timer, tqdm(total=self.requirements.num_of_generations,
                               desc='Generations', unit='gen', initial=1,
                               disable=not show_progress or self.log.verbosity_level == -1):
+
+            # Adding of initial assumptions to history as zero generation
+            if self.initial_graphs:
+                initial_individuals = [Individual(self.graph_generation_params.adapter.adapt(g)) for g in
+                                       self.initial_graphs]
+                self._next_population(evaluator(initial_individuals))
 
             pop_size = self._pop_size.initial
             self._next_population(evaluator(self._init_population(pop_size, self._graph_depth.initial)))
