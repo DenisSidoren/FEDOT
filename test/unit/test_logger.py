@@ -50,9 +50,7 @@ def test_logger_from_config_file_setup_correctly(data_fixture, request):
 
 def test_logger_write_logs_correctly():
     test_file_path = str(os.path.dirname(__file__))
-    test_log_file = os.path.join(test_file_path, 'test_log.log')
-    test_log = default_log('test_log',
-                           log_file=test_log_file)
+    test_log = default_log('test_log')
 
     # Model data preparation
     file = os.path.join('../data', 'advanced_classification.csv')
@@ -65,11 +63,10 @@ def test_logger_write_logs_correctly():
     except Exception:
         print('Captured error')
 
-    if os.path.exists(test_log_file):
-        with open(test_log_file, 'r') as file:
+    if os.path.exists(test_log.log_file):
+        with open(test_log.log_file, 'r') as file:
             content = file.readlines()
 
-    release_log(logger=test_log, log_file=test_log_file)
     # Is there a required message in the logs
     assert any('Can not find evaluation strategy' in log_message for log_message in content)
 
@@ -78,7 +75,7 @@ def test_logger_manager_keeps_loggers_correctly():
     LogManager().clear_cache()
 
     pipeline = create_four_depth_pipeline()
-    expected_number_of_loggers = 6
+    expected_number_of_loggers = 14
 
     file = os.path.join('../data', 'advanced_classification.csv')
     test_file_path = str(os.path.dirname(__file__))

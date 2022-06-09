@@ -35,8 +35,7 @@ class MultiTimesAnalyze:
     def __init__(self, pipeline: Pipeline, train_data: InputData,
                  test_data: InputData, valid_data: InputData,
                  case_name: str, path_to_save: str = None,
-                 approaches: Optional[List[Type[NodeAnalyzeApproach]]] = None,
-                 log: Optional[Log] = None):
+                 approaches: Optional[List[Type[NodeAnalyzeApproach]]] = None):
         self.pipeline = pipeline
         self.original_pipeline_len = self.pipeline.length
         self.train_data = train_data
@@ -48,7 +47,7 @@ class MultiTimesAnalyze:
                  'sensitivity', 'mta_analysis', f'{case_name}') \
                 if path_to_save is None else path_to_save
         self.approaches = [NodeDeletionAnalyze] if approaches is None else approaches
-        self.log = default_log(__name__) if log is None else log
+        self.log = default_log(self.__class__.__name__)
 
     def analyze(self, is_visualize=False, meta_params: MTAMetaParams = None) -> float:
         """

@@ -36,7 +36,7 @@ class PipelineSensitivityAnalysis:
                  path_to_save=None,
                  log: Optional[Log] = None):
 
-        self.log = default_log(__name__) if log is None else log
+        self.log = default_log(self.__class__.__name__)
 
         if approaches:
             nodes_analyze_approaches = [approach for approach in approaches

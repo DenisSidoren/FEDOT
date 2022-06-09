@@ -34,8 +34,8 @@ class RandomMutationSearchOptimizer(GraphOptimiser):
 
     def optimise(self, objective: ObjectiveFunction, show_progress: bool = True):
 
-        timer = OptimisationTimer(log=self.log, timeout=self.requirements.timeout)
-        dispatcher = MultiprocessingDispatcher(self.graph_generation_params.adapter, timer, log=self.log, n_jobs=1)
+        timer = OptimisationTimer(timeout=self.requirements.timeout)
+        dispatcher = MultiprocessingDispatcher(self.graph_generation_params.adapter, timer, n_jobs=1)
         evaluator = dispatcher.dispatch(objective)
 
         num_iter = 0
@@ -45,7 +45,7 @@ class RandomMutationSearchOptimizer(GraphOptimiser):
         with timer as t:
             while not t.is_time_limit_reached(num_iter):
                 new = mutation(types=self.change_types, ind=best, params=self.graph_generation_params,
-                               requirements=self.requirements, log=self.log)
+                               requirements=self.requirements)
                 evaluator([new])
                 if new.fitness < best.fitness:
                     best = new

@@ -95,24 +95,22 @@ class EvoGraphOptimiser(GraphOptimiser):
                  initial_graph: Union[Pipeline, Sequence[Pipeline]],
                  requirements: PipelineComposerRequirements,
                  graph_generation_params: GraphGenerationParams,
-                 parameters: Optional[GPGraphOptimiserParameters] = None,
-                 log: Optional[Log] = None):
-        super().__init__(objective, initial_graph, requirements, graph_generation_params, parameters, log)
+                 parameters: Optional[GPGraphOptimiserParameters] = None):
+        super().__init__(objective, initial_graph, requirements, graph_generation_params, parameters)
         self.parameters = parameters or GPGraphOptimiserParameters()
 
         self.population = None
         self.generations = GenerationKeeper(self.objective)
-        self.timer = OptimisationTimer(timeout=self.requirements.timeout, log=self.log)
+        self.timer = OptimisationTimer(timeout=self.requirements.timeout)
         self.eval_dispatcher = MultiprocessingDispatcher(graph_adapter=graph_generation_params.adapter,
                                                          timer=self.timer,
                                                          n_jobs=requirements.n_jobs,
-                                                         graph_cleanup_fn=_unfit_pipeline,
-                                                         log=log)
+                                                         graph_cleanup_fn=_unfit_pipeline)
 
         # stopping_after_n_generation may be None, so use some obvious max number
         max_stagnation_length = parameters.stopping_after_n_generation or requirements.num_of_generations
         self.stop_optimisation = \
-            GroupedCondition(self.log) \
+            GroupedCondition() \
             .add_condition(
                 lambda: self.timer.is_time_limit_reached(self.generations.generation_num),
                 'Optimisation stopped: Time limit is reached'
@@ -145,7 +143,7 @@ class EvoGraphOptimiser(GraphOptimiser):
             init_adaptive_operators_prob(parameters.genetic_scheme_type, requirements)
 
     def _init_population(self, pop_size: int, max_depth: int) -> PopulationT:
-        builder = InitialPopulationBuilder(self.graph_generation_params, self.log)
+        builder = InitialPopulationBuilder(self.graph_generation_params)
         if not self.initial_graph:
             random_graph_sampler = partial(random_graph, self.graph_generation_params, self.requirements, max_depth)
             builder.with_custom_sampler(random_graph_sampler)
@@ -275,7 +273,8 @@ class EvoGraphOptimiser(GraphOptimiser):
         return crossover(self.parameters.crossover_types,
                          individual1, individual2,
                          crossover_prob=self.requirements.crossover_prob,
-                         max_depth=self.max_depth, log=self.log,
+                         max_depth=self.max_depth,
+                         log=self.log,
                          params=self.graph_generation_params)
 
 

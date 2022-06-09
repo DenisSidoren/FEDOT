@@ -38,7 +38,7 @@ class PipelineTemplate:
     :params log: Log object to record messages
     """
 
-    def __init__(self, pipeline: 'Pipeline' = None, log: Optional[Log] = None):
+    def __init__(self, pipeline: 'Pipeline' = None):
         self.total_pipeline_operations = Counter()
         self.operation_templates: List[OperationTemplate] = []
         self.unique_pipeline_id = str(uuid4())
@@ -53,7 +53,7 @@ class PipelineTemplate:
             self.depth = 0
             self.data_preprocessor = None
 
-        self.log = log or default_log(__name__)
+        self.log = default_log(self.__class__.__name__)
 
         self._pipeline_to_template(pipeline)
 

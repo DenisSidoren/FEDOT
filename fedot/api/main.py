@@ -119,8 +119,7 @@ class Fedot:
         self.params.api_params['tuner_metric'] = self.tuner_metrics
 
         # Initialize data processors for data preprocessing and preliminary data analysis
-        self.data_processor = ApiDataProcessor(task=self.params.api_params['task'],
-                                               log=self.params.api_params['logger'])
+        self.data_processor = ApiDataProcessor(task=self.params.api_params['task'])
         self.data_analyser = DataAnalyser(safe_mode=safe_mode)
 
         self.target: Optional[TargetType] = None

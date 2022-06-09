@@ -29,13 +29,12 @@ class NodesAnalysis:
     Default: [NodeDeletionAnalyze, NodeReplaceOperationAnalyze]
     :param nodes_to_analyze: nodes to analyze. Default: all nodes
     :param path_to_save: path to save results to. Default: ~home/Fedot/sensitivity
-    :param log: log: Log object to record messages
     """
 
     def __init__(self, pipeline: Pipeline, train_data: InputData, test_data: InputData,
                  approaches: Optional[List[Type[NodeAnalyzeApproach]]] = None,
                  requirements: SensitivityAnalysisRequirements = None,
-                 path_to_save=None, log: Optional[Log] = None,
+                 path_to_save=None,
                  nodes_to_analyze: List[Node] = None):
 
         self.pipeline = pipeline
@@ -45,7 +44,7 @@ class NodesAnalysis:
         self.requirements = \
             SensitivityAnalysisRequirements() if requirements is None else requirements
         self.metric = self.requirements.metric
-        self.log = default_log(__name__) if log is None else log
+        self.log = default_log(self.__class__.__name__)
         self.path_to_save = \
             join(default_fedot_data_dir(), 'sensitivity', 'nodes_sensitivity') if path_to_save is None else path_to_save
 

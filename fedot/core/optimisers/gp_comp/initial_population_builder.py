@@ -3,7 +3,7 @@ from typing import Callable, Optional, Sequence
 import numpy as np
 
 from fedot.core.composer.constraint import constraint_function
-from fedot.core.log import Log
+from fedot.core.log import default_log
 from fedot.core.optimisers.gp_comp.individual import Individual
 from fedot.core.optimisers.gp_comp.operators.operator import Operator, PopulationT
 from fedot.core.optimisers.graph import OptGraph
@@ -20,12 +20,12 @@ class InitialPopulationBuilder:
 
     _max_generation_attempts = 1000
 
-    def __init__(self, graph_generation_params: GraphGenerationParams, log: Log):
+    def __init__(self, graph_generation_params: GraphGenerationParams):
         self.graph_gen_params = graph_generation_params
         self.mutation_operator: Callable[[Individual], Individual] = lambda ind: ind
         self.graph_sampler: Optional[GraphSampler] = None
         self.initial_graphs: Sequence[OptGraph] = ()
-        self.log = log
+        self.log = default_log(self.__class__.__name__)
 
     def with_mutation(self, mutation_operator: Operator[Individual]):
         """Enables mutation of sampled graphs with provided operator."""

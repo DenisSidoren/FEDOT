@@ -15,7 +15,7 @@ from fedot.core.repository.dataset_types import DataTypesEnum
 
 
 class LaggedImplementation(DataOperationImplementation):
-    def __init__(self, log: Optional[Log] = None, **params):
+    def __init__(self, **params):
         super().__init__()
 
         self.window_size_minimum = None
@@ -27,7 +27,7 @@ class LaggedImplementation(DataOperationImplementation):
         self.parameters_changed = False
 
         # Define logger object
-        self.log = log or default_log(__name__)
+        self.log = default_log(self.__class__.__name__)
 
     def fit(self, input_data):
         """ Class doesn't support fit operation
@@ -456,7 +456,7 @@ class GaussianFilterImplementation(DataOperationImplementation):
 
 
 class NumericalDerivativeFilterImplementation(DataOperationImplementation):
-    def __init__(self, log: Optional[Log] = None, **params):
+    def __init__(self, **params):
         super().__init__()
         self.params = params
         self.parameters_changed = False
@@ -466,7 +466,7 @@ class NumericalDerivativeFilterImplementation(DataOperationImplementation):
         self.default_poly_degree = 2
         self.default_order = 1
 
-        self.log = log or default_log(__name__)
+        self.log = default_log(self.__class__.__name__)
 
         self.poly_degree = int(self.params['poly_degree'])
         self.order = int(self.params['order'])
@@ -579,12 +579,12 @@ class NumericalDerivativeFilterImplementation(DataOperationImplementation):
 
 
 class CutImplementation(DataOperationImplementation):
-    def __init__(self, log: Optional[Log] = None, **params):
+    def __init__(self, **params):
         super().__init__()
         cut_part = params.get('cut_part')
 
         # Define logger object
-        self.log = log or default_log(__name__)
+        self.log = default_log(self.__class__.__name__)
 
         if 0 < cut_part <= 0.9:
             self.cut_part = cut_part

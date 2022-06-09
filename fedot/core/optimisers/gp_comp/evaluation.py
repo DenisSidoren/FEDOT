@@ -51,7 +51,6 @@ class MultiprocessingDispatcher(ObjectiveEvaluationDispatcher):
     def __init__(self,
                  graph_adapter: BaseOptimizationAdapter,
                  timer: Timer = None,
-                 log: Log = None,
                  n_jobs: int = 1,
                  graph_cleanup_fn: Optional[GraphFunction] = None):
         self._objective_eval = None
@@ -60,7 +59,7 @@ class MultiprocessingDispatcher(ObjectiveEvaluationDispatcher):
         self._post_eval_callback = None
 
         self.timer = timer or get_forever_timer()
-        self.logger = log or default_log(self.__class__.__name__)
+        self.logger = default_log(self.__class__.__name__)
         self._n_jobs = n_jobs
         self._reset_eval_cache()
 

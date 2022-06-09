@@ -22,7 +22,7 @@ class TableTypesCorrector:
     Class for checking types in input data. Also perform conversion for columns with types conflicts
     """
 
-    def __init__(self, log: Optional[Log] = None):
+    def __init__(self):
         # Maximum allowed unique categories in categorical table (if more - transform it into float)
         self.categorical_max_classes_th = MAX_CATEGORIES_TH
         # Threshold to convert numerical into categorical column
@@ -50,7 +50,7 @@ class TableTypesCorrector:
         # Lists with column types for converting calculated on source input data
         self.features_types = None
         self.target_types = None
-        self.log = log or default_log(__name__)
+        self.log = default_log(self.__class__.__name__)
 
     def convert_data_for_fit(self, data: 'InputData'):
         """ If column contain several data types - perform correction procedure """

@@ -14,8 +14,8 @@ class DataOperation(Operation):
     :param log: Log object to record messages
     """
 
-    def __init__(self, operation_type: str, log: Optional[Log] = None):
-        super().__init__(operation_type, log)
+    def __init__(self, operation_type: str):
+        super().__init__(operation_type)
         self.operations_repo = OperationTypesRepository('data_operation')
 
     @property

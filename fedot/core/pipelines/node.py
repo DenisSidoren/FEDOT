@@ -30,8 +30,7 @@ class Node(GraphNode):
     """
 
     def __init__(self, nodes_from: Optional[List['Node']],
-                 operation_type: Optional[Union[str, 'Operation']] = None,
-                 log: Optional[Log] = None, **kwargs):
+                 operation_type: Optional[Union[str, 'Operation']] = None, **kwargs):
 
         passed_content = kwargs.get('content')
         if passed_content:
@@ -59,12 +58,11 @@ class Node(GraphNode):
         self.fit_time_in_seconds = 0
         self.inference_time_in_seconds = 0
 
-
         # Create Node with default content
         super().__init__(content={'name': operation,
                                   'params': default_params}, nodes_from=nodes_from)
 
-        self.log = log or default_log(__name__)
+        self.log = default_log(self.__class__.__name__)
         self._fitted_operation = None
         self.rating = None
 
@@ -168,7 +166,7 @@ class Node(GraphNode):
         """
 
         if self.fitted_operation is None:
-            with Timer(log=self.log) as t:
+            with Timer() as t:
                 self.fitted_operation, operation_predict = self.operation.fit(params=self.content['params'],
                                                                               data=input_data,
                                                                               is_fit_pipeline_stage=True)
@@ -193,7 +191,7 @@ class Node(GraphNode):
         :param input_data: data used for prediction
         :param output_mode: desired output for operations (e.g. labels, probs, full_probs)
         """
-        with Timer(log=self.log) as t:
+        with Timer() as t:
             operation_predict = self.operation.predict(fitted_operation=self.fitted_operation,
                                                        params=self.content['params'],
                                                        data=input_data,
@@ -365,7 +363,7 @@ class SecondaryNode(Node):
         parent_results, target = _combine_parents(parent_nodes, input_data,
                                                   parent_operation)
 
-        secondary_input = DataMerger.get(parent_results, log=self.log).merge()
+        secondary_input = DataMerger.get(parent_results).merge()
 
         # Update info about visited nodes
         parent_operations = [node.operation.operation_type for node in parent_nodes]
