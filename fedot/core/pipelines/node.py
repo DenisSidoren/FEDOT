@@ -26,7 +26,6 @@ class Node(GraphNode):
     :param operation_type: str type of the operation defined in operation repository
                             the custom prefix can be added after / (to highlight the specific node)
                             The prefix will be ignored at Implementation stage
-    :param log: Log object to record messages
     """
 
     def __init__(self, nodes_from: Optional[List['Node']],

@@ -28,7 +28,6 @@ class Pipeline(Graph):
     Base class used for composite model structure definition
 
     :param nodes: Node object(s)
-    :param log: Log object to record messages
     """
 
     def __init__(self, nodes: Optional[Union[Node, List[Node]]] = None):

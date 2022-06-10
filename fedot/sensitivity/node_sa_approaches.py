@@ -24,12 +24,11 @@ class NodeAnalysis:
     :param approaches: methods applied to nodes to modify the pipeline or analyze certain operations.\
     Default: [NodeDeletionAnalyze, NodeTuneAnalyze, NodeReplaceOperationAnalyze]
     :param path_to_save: path to save results to. Default: ~home/Fedot/sensitivity
-    :param log: log: Log object to record messages
     """
 
     def __init__(self, approaches: Optional[List[Type['NodeAnalyzeApproach']]] = None,
                  approaches_requirements: SensitivityAnalysisRequirements = None,
-                 path_to_save=None, log: Optional[Log] = None):
+                 path_to_save=None):
 
         self.approaches = [NodeDeletionAnalyze, NodeReplaceOperationAnalyze] if approaches is None else approaches
 
@@ -126,12 +125,11 @@ class NodeAnalyzeApproach(ABC):
     :param train_data: data used for Pipeline training
     :param test_data: data used for Pipeline validation
     :param path_to_save: path to save results to. Default: ~home/Fedot/sensitivity
-    :param log: log: Log object to record messages
     """
 
     def __init__(self, pipeline: Pipeline, train_data, test_data: InputData,
                  requirements: SensitivityAnalysisRequirements = None,
-                 path_to_save=None, log: Optional[Log] = None):
+                 path_to_save=None):
         self._pipeline = pipeline
         self._train_data = train_data
         self._test_data = test_data

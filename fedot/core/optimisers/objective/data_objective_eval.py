@@ -26,8 +26,7 @@ class PipelineObjectiveEvaluate(ObjectiveEvaluate[Pipeline]):
     If it returns a single fold, it's effectively a hold-out validation. For many folds it's k-folds.
     :param time_constraint: Optional time constraint for pipeline.fit.
     :param validation_blocks: Number of validation blocks, optional, used only for time series validation.
-    :param cache: Cache manager for fitted models, optional.
-    :param log: Logger.
+    :param cache: Cache manager for fitted models, optional
     """
 
     def __init__(self,

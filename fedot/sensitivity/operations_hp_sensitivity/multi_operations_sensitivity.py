@@ -27,12 +27,11 @@ class MultiOperationsHPAnalyze:
     See SensitivityAnalysisRequirements class documentation.
     :param path_to_save: path to save results to. Default: ~home/Fedot/sensitivity/
     Default: False
-    :param log: log: Log object to record messages
     """
 
     def __init__(self, pipeline: Pipeline, train_data: InputData, test_data: InputData,
                  requirements: SensitivityAnalysisRequirements = None,
-                 path_to_save=None, log: Optional[Log] = None):
+                 path_to_save=None):
         self._pipeline = pipeline
         self._train_data = train_data
         self._test_data = test_data

@@ -83,7 +83,6 @@ class OptGraph:
     Base class used for optimized structure
 
     :param nodes: OptNode object(s)
-    :param log: Log object to record messages
     """
 
     def __init__(self, nodes: Optional[Union[OptNode, List[OptNode]]] = None):

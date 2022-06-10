@@ -27,7 +27,6 @@ class MultiTimesAnalyze:
     :param approaches: methods applied to nodes to modify
         the pipeline or analyze certain operations.\
     Defaults: NodeDeletionAnalyze.
-    :param log: log: Log object to record messages
     """
 
     default_mta_meta_params = MTAMetaParams(10e-3, 1.1)

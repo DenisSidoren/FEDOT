@@ -42,8 +42,7 @@ class MultiprocessingDispatcher(ObjectiveEvaluationDispatcher):
 
     Usage: call `dispatch(objective_function)` to get evaluation function.
 
-    :param graph_adapter: adapter for mapping between OptGraph and Graph.
-    :param log: logger to use
+    :param graph_adapter: adapter for mapping between OptGraph and Graph
     :param n_jobs: number of jobs for multiprocessing or 1 for no multiprocessing.
     :param graph_cleanup_fn: function to call after graph evaluation, primarily for memory cleanup.
     """

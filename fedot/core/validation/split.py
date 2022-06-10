@@ -82,7 +82,6 @@ def tabular_cv_generator(data: InputData, folds: int) -> Iterator[Tuple[InputDat
     :param data: InputData for train and test splitting
     :param folds: number of folds
     :param validation_blocks: number of validation block per each fold (unused)
-    :param log: log object
 
     :return Iterator[InputData, InputData]: return split train/test data
     """

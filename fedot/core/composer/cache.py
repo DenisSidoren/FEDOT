@@ -25,7 +25,6 @@ class OperationsCache(metaclass=SingletonMeta):
     """
     Stores/loads nodes `fitted_operation` field to increase performance of calculations.
 
-    :param log: optional Log object to record messages
     :param db_path: optional str determining a file name for caching pipelines
     """
 
