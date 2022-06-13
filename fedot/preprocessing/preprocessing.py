@@ -201,7 +201,7 @@ class DataPreprocessor:
             # Wrap indices in numpy array
             data.idx = np.array(data.idx)
 
-            # Process categorical features
+            # Process binary categorical features
             self.binary_categorical_processors[source_name].fit(data)
             data = self.binary_categorical_processors[source_name].transform(data)
 
@@ -226,7 +226,6 @@ class DataPreprocessor:
             data.idx = np.array(data.idx)
             data = self.binary_categorical_processors[source_name].transform(data)
 
-            # self._apply_categorical_encoding(data, source_name)
         return data
 
     def _prepare_optional(self, pipeline, data: InputData, source_name: str):
