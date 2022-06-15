@@ -1,5 +1,6 @@
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Tuple, Union
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple, Union, Callable, Sequence
 
 from networkx import graph_edit_distance, set_node_attributes
 
@@ -8,14 +9,17 @@ from fedot.core.pipelines.convert import graph_structure_as_nx_graph
 from fedot.core.utilities.data_structures import ensure_wrapped_in_sequence, remove_items
 
 
-class GraphOperator:
-    def __init__(self, graph=None, postproc_nodes=None):
-        self._graph = graph
-        self._postproc_nodes = postproc_nodes
+class GraphOperator(Graph):
+    def __init__(self, nodes: Optional[Union['GraphNode', List['GraphNode']]] = None,
+                 postproc_nodes: Optional[Callable[Sequence['GraphNode'], Any]] = None):
+        self._nodes = []
+        for node in ensure_wrapped_in_sequence(nodes):
+            self.add_node(node)
+        self._postproc_nodes = postproc_nodes or (lambda x: None)
 
     def delete_node(self, node: GraphNode):
         node_children_cached = self.node_children(node)
-        self_root_node_cached = self._graph.root_node
+        self_root_node_cached = self.root_node
 
         for node_child in self.node_children(node):
             node_child.nodes_from.remove(node)
@@ -89,7 +93,7 @@ class GraphOperator:
                         nodes.extend(get_nodes(child, current_height + 1))
             return nodes
 
-        nodes = get_nodes(self._graph.root_node, current_height=0)
+        nodes = get_nodes(self.root_node, current_height=0)
         return nodes
 
     def actualise_old_node_children(self, old_node: GraphNode, new_node: GraphNode):
@@ -100,10 +104,10 @@ class GraphOperator:
 
     def sort_nodes(self):
         """layer by layer sorting"""
-        if isinstance(self._graph.root_node, list):
+        if isinstance(self.root_node, list):
             nodes = self._graph.nodes
         else:
-            nodes = self._graph.root_node.ordered_subnodes_hierarchy()
+            nodes = self.root_node.ordered_subnodes_hierarchy()
         self._graph.nodes = nodes
 
     def node_children(self, node) -> List[Optional[GraphNode]]:
@@ -161,6 +165,7 @@ class GraphOperator:
 
         self._postproc_nodes()
 
+    @property
     def root_node(self) -> Union[GraphNode, List[GraphNode]]:
         if not self._graph.nodes:
             return []
@@ -171,24 +176,17 @@ class GraphOperator:
         return roots
 
     def is_graph_equal(self, other_graph: 'Graph') -> bool:
-        if all(isinstance(rn, list) for rn in [self._graph.root_node, other_graph.root_node]):
-            return set(rn.descriptive_id for rn in self._graph.root_node) == \
+        if all(isinstance(rn, list) for rn in [self.root_node, other_graph.root_node]):
+            return set(rn.descriptive_id for rn in self.root_node) == \
                    set(rn.descriptive_id for rn in other_graph.root_node)
-        elif all(not isinstance(rn, list) for rn in [self._graph.root_node, other_graph.root_node]):
-            return self._graph.root_node.descriptive_id == other_graph.root_node.descriptive_id
+        elif all(not isinstance(rn, list) for rn in [self.root_node, other_graph.root_node]):
+            return self.root_node.descriptive_id == other_graph.root_node.descriptive_id
         else:
             return False
 
-    def graph_description(self) -> str:
-        return str({
-            'depth': self._graph.depth,
-            'length': self._graph.length,
-            'nodes': self._graph.nodes,
-        })
-
     @property
     def descriptive_id(self) -> str:
-        root_list = ensure_wrapped_in_sequence(self.root_node())
+        root_list = ensure_wrapped_in_sequence(self.root_node)
         full_desc_id = ''.join([r.descriptive_id for r in root_list])
         return full_desc_id
 
@@ -204,7 +202,7 @@ class GraphOperator:
             else:
                 return 1 + max(_depth_recursive(next_node) for next_node in node.nodes_from)
 
-        root = ensure_wrapped_in_sequence(self.root_node())
+        root = ensure_wrapped_in_sequence(self.root_node)
         return max(_depth_recursive(n) for n in root)
 
     def get_nodes_degrees(self):
