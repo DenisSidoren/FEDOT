@@ -20,3 +20,4 @@ API
    sensitivity
    synthetic_dataset_generator
    profiler
+   point
