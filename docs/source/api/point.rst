@@ -1,5 +1,5 @@
 class Point
 ~~~~~~~~~~~~
-.. autoclass:: gefest.core.structure.point.Point
+.. autoclass:: fedot.core.point
    :members:
    :no-undoc-members:
